@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web DICOM Editor</title>
+    <link rel="stylesheet" href="src/styles/main.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="folder-controls">
+        <label class="folder-button">
+          <input type="file" id="inputFolder" webkitdirectory multiple hidden />
+          <span>Select Input Folder</span>
+        </label>
+        <button id="outputFolderButton" class="folder-button">Select Output Folder</button>
+        <span id="folderStatus" class="status"></span>
+      </div>
+      <div class="save-indicator" id="saveIndicator">Unsaved changes</div>
+    </header>
+
+    <main class="app-main">
+      <section class="series-panel" id="seriesPanel"></section>
+      <section class="viewer-panel">
+        <div class="toolbar" id="toolbar">
+          <button data-tool="window" class="tool-button active">Window</button>
+          <button data-tool="pan" class="tool-button">Pan</button>
+          <button data-tool="zoom" class="tool-button">Zoom</button>
+          <button data-tool="brush" class="tool-button">Brush</button>
+          <button data-tool="select" class="tool-button">Select</button>
+          <div class="tool-group" id="brushControls">
+            <label>Brush Size<input type="range" min="1" max="100" value="20" id="brushSize" /></label>
+            <label>Intensity<input type="range" min="0" max="65535" value="4000" id="brushIntensity" /></label>
+          </div>
+        </div>
+        <div class="viewer-container">
+          <canvas id="dicomCanvas" width="512" height="512"></canvas>
+          <canvas id="overlayCanvas" width="512" height="512"></canvas>
+          <div class="image-info" id="imageInfo"></div>
+        </div>
+      </section>
+    </main>
+
+    <template id="seriesCardTemplate">
+      <div class="series-card">
+        <canvas class="series-thumbnail" width="80" height="80"></canvas>
+        <div class="series-meta">
+          <div class="series-number"></div>
+          <div class="series-description"></div>
+        </div>
+      </div>
+    </template>
+
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>
