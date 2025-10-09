@@ -838,6 +838,7 @@ class Viewer {
     this.canvas.addEventListener('pointerleave', handlePointerUp);
     this.canvas.addEventListener('pointercancel', handlePointerUp);
     this.canvas.addEventListener('wheel', handleWheel, { passive: false });
+    this.overlayCanvas.addEventListener('wheel', handleWheel, { passive: false });
 
     window.addEventListener('keydown', (event) => {
       if (event.defaultPrevented) return;
