@@ -361,6 +361,7 @@ class Viewer {
   updateSelectionRect() {
     if (!this.selection) {
       this.selectionRect.style.display = 'none';
+      console.log('[Viewer] selection rect hidden');
       return;
     }
     const { start, end } = this.selection;
@@ -369,11 +370,20 @@ class Viewer {
     const width = Math.abs(end[0] - start[0]);
     const height = Math.abs(end[1] - start[1]);
     const scale = this.scale * (this.canvas.width / this.currentImage.columns);
+    const left = this.canvas.offsetLeft + this.offset.x + minX * scale;
+    const top = this.canvas.offsetTop + this.offset.y + minY * scale;
+    const displayWidth = width * scale;
+    const displayHeight = height * scale;
     this.selectionRect.style.display = 'block';
-    this.selectionRect.style.left = `${this.canvas.offsetLeft + this.offset.x + minX * scale}px`;
-    this.selectionRect.style.top = `${this.canvas.offsetTop + this.offset.y + minY * scale}px`;
-    this.selectionRect.style.width = `${width * scale}px`;
-    this.selectionRect.style.height = `${height * scale}px`;
+    this.selectionRect.style.left = `${left}px`;
+    this.selectionRect.style.top = `${top}px`;
+    this.selectionRect.style.width = `${displayWidth}px`;
+    this.selectionRect.style.height = `${displayHeight}px`;
+    console.log('[Viewer] selection rect updated', {
+      start,
+      end,
+      display: { left, top, width: displayWidth, height: displayHeight },
+    });
   }
 
   initEvents() {
@@ -392,60 +402,33 @@ class Viewer {
 
     const handlePointerMove = (event) => {
       if (!this.currentImage) {
-        console.log('[Viewer] pointermove ignored - no current image', {
-          tool: this.activeTool,
-          isDragging: this.isDragging,
-        });
         return;
       }
 
       const coords = this.coordsFromPointer(event);
-      console.log('[Viewer] pointermove received', {
-        tool: this.activeTool,
-        isDragging: this.isDragging,
-        coords,
-        pointer: { x: event.clientX, y: event.clientY },
-      });
 
       if (this.activeTool === 'brush' && this.isDragging) {
-        console.log('[Viewer] pointermove -> brush update');
         this.applyBrush(this.currentImage, coords);
         this.render();
       } else if (this.activeTool === 'window' && this.isDragging) {
         const dx = event.clientX - this.lastPointer.x;
         const dy = event.clientY - this.lastPointer.y;
-        console.log('[Viewer] pointermove -> window adjust', { dx, dy });
         this.adjustWindow(dx, dy);
         this.lastPointer = { x: event.clientX, y: event.clientY };
       } else if (this.activeTool === 'pan' && this.isDragging) {
         const dx = event.clientX - this.lastPointer.x;
         const dy = event.clientY - this.lastPointer.y;
-        console.log('[Viewer] pointermove -> pan adjust', { dx, dy });
         this.adjustPan(dx, dy);
         this.lastPointer = { x: event.clientX, y: event.clientY };
       } else if (this.activeTool === 'zoom' && this.isDragging) {
         const dy = event.clientY - this.lastPointer.y;
-        console.log('[Viewer] pointermove -> zoom adjust', { dy });
         this.adjustZoom(dy, coords);
         this.lastPointer = { x: event.clientX, y: event.clientY };
       } else if (this.activeTool === 'select' && this.isDragging) {
         if (!this.selection) {
-          console.warn('[Viewer] pointermove -> select with missing selection state', {
-            coords,
-          });
-        } else {
-          console.log('[Viewer] pointermove -> selection update', {
-            start: this.selection.start,
-            end: this.selection.end,
-            next: coords,
-          });
+          return;
         }
         this.updateSelection(coords);
-      } else {
-        console.log('[Viewer] pointermove ignored - no matching branch', {
-          tool: this.activeTool,
-          isDragging: this.isDragging,
-        });
       }
     };
 

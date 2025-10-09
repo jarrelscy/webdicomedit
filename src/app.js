@@ -11,6 +11,8 @@ const saveButton = document.getElementById('saveButton');
 const brushControls = document.getElementById('brushControls');
 const brushSizeInput = document.getElementById('brushSize');
 const brushIntensityInput = document.getElementById('brushIntensity');
+const brushSizeValue = document.getElementById('brushSizeValue');
+const brushIntensityValue = document.getElementById('brushIntensityValue');
 const canvas = document.getElementById('dicomCanvas');
 const overlayCanvas = document.getElementById('overlayCanvas');
 const infoBox = document.getElementById('imageInfo');
@@ -24,6 +26,11 @@ let selectedSeriesId = null;
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
+function updateBrushDisplay() {
+  brushSizeValue.textContent = brushSizeInput.value;
+  brushIntensityValue.textContent = brushIntensityInput.value;
+}
+
 function updateBrushRange(image) {
   if (!image) return;
   const min = image.minStoredValue ?? 0;
@@ -33,6 +40,7 @@ function updateBrushRange(image) {
   const current = clamp(Number(brushIntensityInput.value), min, max);
   brushIntensityInput.value = current;
   viewer.setBrushSettings(Number(brushSizeInput.value), current);
+  updateBrushDisplay();
 }
 
 function setStatus(message) {
@@ -168,10 +176,12 @@ toolbar.addEventListener('click', (event) => {
 
 brushSizeInput.addEventListener('input', () => {
   viewer.setBrushSettings(Number(brushSizeInput.value), Number(brushIntensityInput.value));
+  updateBrushDisplay();
 });
 
 brushIntensityInput.addEventListener('input', () => {
   viewer.setBrushSettings(Number(brushSizeInput.value), Number(brushIntensityInput.value));
+  updateBrushDisplay();
 });
 
 window.addEventListener('keydown', async (event) => {
@@ -199,3 +209,4 @@ window.addEventListener('keydown', async (event) => {
 setActiveTool(toolbar.querySelector('[data-tool="window"]'));
 viewer.setBrushSettings(Number(brushSizeInput.value), Number(brushIntensityInput.value));
 viewer.onImageChange((image) => updateBrushRange(image));
+updateBrushDisplay();

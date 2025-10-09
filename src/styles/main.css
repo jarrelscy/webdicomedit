@@ -170,13 +170,27 @@ body {
   z-index: 3;
 }
 
-.brush-overlay label {
-  display: grid;
-  gap: 0.35rem;
+.brush-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.brush-control-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  font-weight: 600;
+}
+
+.brush-control-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
 }
 
 .brush-overlay input[type='range'] {
-  width: 200px;
+  width: 220px;
 }
 
 .viewer-container {
