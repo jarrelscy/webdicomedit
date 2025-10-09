@@ -31,15 +31,15 @@
           <button data-tool="zoom" class="tool-button" title="Zoom (Z)">Zoom</button>
           <button data-tool="brush" class="tool-button" title="Brush (B)">Brush</button>
           <button data-tool="select" class="tool-button" title="Select (S)">Select</button>
-          <div class="tool-group" id="brushControls">
-            <label>Brush Size<input type="range" min="1" max="100" value="20" id="brushSize" /></label>
-            <label>Intensity<input type="range" min="0" max="65535" value="4000" id="brushIntensity" /></label>
-          </div>
         </div>
         <div class="viewer-container">
           <canvas id="dicomCanvas" width="512" height="512"></canvas>
           <canvas id="overlayCanvas" width="512" height="512"></canvas>
           <div class="image-info" id="imageInfo"></div>
+          <div class="brush-overlay" id="brushControls">
+            <label>Brush Size<input type="range" min="1" max="100" value="20" id="brushSize" /></label>
+            <label>Intensity<input type="range" min="0" max="65535" value="4000" id="brushIntensity" /></label>
+          </div>
         </div>
       </section>
     </main>

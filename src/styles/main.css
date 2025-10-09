@@ -155,22 +155,28 @@ body {
   color: #04121f;
 }
 
-.tool-group {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #333;
-  display: grid;
+.brush-overlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(68, 68, 68, 0.9);
+  color: #fff;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+  display: none;
   gap: 0.75rem;
   font-size: 0.85rem;
+  z-index: 3;
 }
 
-#brushControls {
-  display: none;
-}
-
-.tool-group label {
+.brush-overlay label {
   display: grid;
-  gap: 0.25rem;
+  gap: 0.35rem;
+}
+
+.brush-overlay input[type='range'] {
+  width: 200px;
 }
 
 .viewer-container {
