@@ -7,6 +7,7 @@ const outputFolderButton = document.getElementById('outputFolderButton');
 const folderStatus = document.getElementById('folderStatus');
 const seriesPanel = document.getElementById('seriesPanel');
 const toolbar = document.getElementById('toolbar');
+const saveButton = document.getElementById('saveButton');
 const brushControls = document.getElementById('brushControls');
 const brushSizeInput = document.getElementById('brushSize');
 const brushIntensityInput = document.getElementById('brushIntensity');
@@ -49,6 +50,19 @@ function toggleSaveIndicator(hasDirty) {
 saveManager.onDirtyChange(toggleSaveIndicator);
 
 toggleSaveIndicator(false);
+
+async function handleSave() {
+  try {
+    const saved = await saveManager.saveAll();
+    if (saved.length) {
+      setStatus(`Saved ${saved.length} file(s)`);
+    } else {
+      setStatus('No changes to save');
+    }
+  } catch (err) {
+    setStatus(err.message);
+  }
+}
 
 function renderSeriesPanel() {
   seriesPanel.innerHTML = '';
@@ -144,6 +158,11 @@ function setActiveTool(button) {
 toolbar.addEventListener('click', (event) => {
   const button = event.target.closest('.tool-button');
   if (!button) return;
+  if (button === saveButton) {
+    handleSave();
+    return;
+  }
+  if (!button.dataset.tool) return;
   setActiveTool(button);
 });
 
@@ -158,16 +177,7 @@ brushIntensityInput.addEventListener('input', () => {
 window.addEventListener('keydown', async (event) => {
   if (event.key === 's' && event.ctrlKey) {
     event.preventDefault();
-    try {
-      const saved = await saveManager.saveAll();
-      if (saved.length) {
-        setStatus(`Saved ${saved.length} file(s)`);
-      } else {
-        setStatus('No changes to save');
-      }
-    } catch (err) {
-      setStatus(err.message);
-    }
+    await handleSave();
   } else if (event.key === 'v' && event.ctrlKey && viewer.clipboard) {
     event.preventDefault();
     if (!viewer.currentImage) return;

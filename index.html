@@ -23,11 +23,14 @@
       <section class="series-panel" id="seriesPanel"></section>
       <section class="viewer-panel">
         <div class="toolbar" id="toolbar">
-          <button data-tool="window" class="tool-button active">Window</button>
-          <button data-tool="pan" class="tool-button">Pan</button>
-          <button data-tool="zoom" class="tool-button">Zoom</button>
-          <button data-tool="brush" class="tool-button">Brush</button>
-          <button data-tool="select" class="tool-button">Select</button>
+          <button id="saveButton" class="tool-button" title="Save (Ctrl+S)">
+            Save
+          </button>
+          <button data-tool="window" class="tool-button active" title="Window (W)">Window</button>
+          <button data-tool="pan" class="tool-button" title="Pan (P)">Pan</button>
+          <button data-tool="zoom" class="tool-button" title="Zoom (Z)">Zoom</button>
+          <button data-tool="brush" class="tool-button" title="Brush (B)">Brush</button>
+          <button data-tool="select" class="tool-button" title="Select (S)">Select</button>
           <div class="tool-group" id="brushControls">
             <label>Brush Size<input type="range" min="1" max="100" value="20" id="brushSize" /></label>
             <label>Intensity<input type="range" min="0" max="65535" value="4000" id="brushIntensity" /></label>
