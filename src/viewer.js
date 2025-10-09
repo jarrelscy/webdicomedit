@@ -4,34 +4,61 @@ function clamp(value, min, max) {
 
 function computeWindowedPixels(image, windowCenter, windowWidth) {
   const pixels = image.pixelArray;
+  const slope = image.rescaleSlope ?? 1;
+  const intercept = image.rescaleIntercept ?? 0;
+  const invert = image.photometricInterpretation === 'MONOCHROME1';
   const output = new Uint8ClampedArray(image.rows * image.columns * 4);
-  const center = windowCenter ?? image.defaultWindowCenter;
-  const width = windowWidth ?? image.defaultWindowWidth;
+  const width = Math.max(windowWidth ?? image.defaultWindowWidth ?? 1, 1);
+  const center = windowCenter ?? image.defaultWindowCenter ?? 0;
   const min = center - width / 2;
   const max = center + width / 2;
   let idx = 0;
   for (let i = 0; i < pixels.length; i++) {
-    const value = clamp((pixels[i] - min) / (max - min), 0, 1) * 255;
-    output[idx++] = value;
-    output[idx++] = value;
-    output[idx++] = value;
+    const hu = pixels[i] * slope + intercept;
+    let value = clamp((hu - min) / (max - min || 1), 0, 1);
+    if (invert) {
+      value = 1 - value;
+    }
+    const gray = Math.round(value * 255);
+    output[idx++] = gray;
+    output[idx++] = gray;
+    output[idx++] = gray;
     output[idx++] = 255;
   }
   return output;
 }
 
-function computeStats(pixelArray) {
+function computeStats(image) {
+  const pixels = image.pixelArray;
+  const slope = image.rescaleSlope ?? 1;
+  const intercept = image.rescaleIntercept ?? 0;
   let min = Infinity;
   let max = -Infinity;
   let sum = 0;
-  for (let i = 0; i < pixelArray.length; i++) {
-    const v = pixelArray[i];
-    if (v < min) min = v;
-    if (v > max) max = v;
-    sum += v;
+  for (let i = 0; i < pixels.length; i++) {
+    const value = pixels[i] * slope + intercept;
+    if (value < min) min = value;
+    if (value > max) max = value;
+    sum += value;
   }
-  const mean = sum / pixelArray.length;
+  const mean = sum / pixels.length;
   return { min, max, mean };
+}
+
+function ensureImageDefaults(image) {
+  if (image.stats) {
+    return;
+  }
+  const stats = computeStats(image);
+  image.stats = stats;
+  if (image.windowCenter == null || image.windowWidth == null) {
+    const windowWidth = Math.max(stats.max - stats.min, 1);
+    image.defaultWindowCenter = (stats.max + stats.min) / 2;
+    image.defaultWindowWidth = windowWidth;
+  } else {
+    image.defaultWindowCenter = image.windowCenter;
+    image.defaultWindowWidth = Math.max(image.windowWidth, 1);
+  }
 }
 
 class Viewer {
@@ -89,17 +116,7 @@ class Viewer {
     this.currentSeries = series;
     this.currentImageIndex = 0;
     for (const image of series.instances) {
-      if (!image.stats) {
-        image.stats = computeStats(image.pixelArray);
-        if (image.windowCenter == null || image.windowWidth == null) {
-          const { min, max } = image.stats;
-          image.defaultWindowCenter = (max + min) / 2;
-          image.defaultWindowWidth = max - min || 1;
-        } else {
-          image.defaultWindowCenter = image.windowCenter;
-          image.defaultWindowWidth = image.windowWidth;
-        }
-      }
+      ensureImageDefaults(image);
     }
     this.resetView();
     this.render();
@@ -444,4 +461,4 @@ class Viewer {
   }
 }
 
-export { Viewer, computeWindowedPixels };
+export { Viewer, computeWindowedPixels, ensureImageDefaults };

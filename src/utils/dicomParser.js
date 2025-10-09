@@ -13,6 +13,8 @@ const TAGS = {
   PIXEL_REPRESENTATION: 0x00280103,
   WINDOW_CENTER: 0x00281050,
   WINDOW_WIDTH: 0x00281051,
+  RESCALE_INTERCEPT: 0x00281052,
+  RESCALE_SLOPE: 0x00281053,
   PHOTOMETRIC_INTERPRETATION: 0x00280004,
   SAMPLES_PER_PIXEL: 0x00280002,
   PIXEL_SPACING: 0x00280030,
@@ -187,6 +189,8 @@ function parseDicom(arrayBuffer) {
   const windowCenter = readNumberArray(windowCenterRaw)[0] ?? null;
   const windowWidth = readNumberArray(windowWidthRaw)[0] ?? null;
   const pixelSpacing = readNumberArray(elements[TAGS.PIXEL_SPACING]);
+  const rescaleIntercept = readNumberArray(elements[TAGS.RESCALE_INTERCEPT])[0] ?? 0;
+  const rescaleSlope = readNumberArray(elements[TAGS.RESCALE_SLOPE])[0] ?? 1;
 
   return {
     elements,
@@ -202,6 +206,8 @@ function parseDicom(arrayBuffer) {
     windowCenter,
     windowWidth,
     pixelSpacing,
+    rescaleIntercept,
+    rescaleSlope,
     seriesDescription: elements[TAGS.SERIES_DESCRIPTION] || 'Series',
     seriesNumber: elements[TAGS.SERIES_NUMBER] ?? null,
     seriesInstanceUID: elements[TAGS.SERIES_INSTANCE_UID] || null,

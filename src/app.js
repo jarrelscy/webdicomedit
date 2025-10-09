@@ -1,5 +1,5 @@
 import { loadDicomSeries } from './dicomLoader.js';
-import { Viewer, computeWindowedPixels } from './viewer.js';
+import { Viewer, computeWindowedPixels, ensureImageDefaults } from './viewer.js';
 import { SaveManager } from './saveManager.js';
 
 const inputFolder = document.getElementById('inputFolder');
@@ -74,19 +74,7 @@ function renderSeriesPanel() {
     previewCanvas.height = image.rows;
     const previewCtx = previewCanvas.getContext('2d');
 
-    if (!image.stats) {
-      let min = Infinity;
-      let max = -Infinity;
-      let sum = 0;
-      for (const value of image.pixelArray) {
-        if (value < min) min = value;
-        if (value > max) max = value;
-        sum += value;
-      }
-      image.stats = { min, max, mean: sum / image.pixelArray.length };
-      image.defaultWindowCenter = image.windowCenter ?? (max + min) / 2;
-      image.defaultWindowWidth = image.windowWidth ?? (max - min || 1);
-    }
+    ensureImageDefaults(image);
 
     const imageData = previewCtx.createImageData(image.columns, image.rows);
     imageData.data.set(
