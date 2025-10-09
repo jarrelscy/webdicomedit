@@ -9,6 +9,9 @@ const seriesPanel = document.getElementById('seriesPanel');
 const toolbar = document.getElementById('toolbar');
 const saveButton = document.getElementById('saveButton');
 const helpButton = document.getElementById('helpButton');
+const copyButton = document.getElementById('copyButton');
+const pasteButton = document.getElementById('pasteButton');
+const mergeButton = document.getElementById('mergeButton');
 const brushControls = document.getElementById('brushControls');
 const brushSizeInput = document.getElementById('brushSize');
 const brushIntensityInput = document.getElementById('brushIntensity');
@@ -26,10 +29,39 @@ let seriesList = [];
 let selectedSeriesId = null;
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const toolHotkeys = {
+  w: 'window',
+  p: 'pan',
+  z: 'zoom',
+  b: 'brush',
+  s: 'select',
+  k: 'eyedropper',
+};
+
+const isTextInput = (element) => {
+  if (!element) return false;
+  const tag = element.tagName;
+  return (
+    tag === 'INPUT' ||
+    tag === 'TEXTAREA' ||
+    element.isContentEditable ||
+    element.getAttribute('role') === 'textbox'
+  );
+};
 
 function updateBrushDisplay() {
   brushSizeValue.textContent = brushSizeInput.value;
   brushIntensityValue.textContent = brushIntensityInput.value;
+}
+
+function syncBrushInputs(size, intensity) {
+  if (size != null) {
+    brushSizeInput.value = String(size);
+  }
+  if (intensity != null) {
+    brushIntensityInput.value = String(intensity);
+  }
+  updateBrushDisplay();
 }
 
 function updateBrushRange(image) {
@@ -39,9 +71,8 @@ function updateBrushRange(image) {
   brushIntensityInput.min = min;
   brushIntensityInput.max = max;
   const current = clamp(Number(brushIntensityInput.value), min, max);
-  brushIntensityInput.value = current;
+  syncBrushInputs(Number(brushSizeInput.value), current);
   viewer.setBrushSettings(Number(brushSizeInput.value), current);
-  updateBrushDisplay();
 }
 
 function setStatus(message) {
@@ -153,9 +184,10 @@ outputFolderButton.addEventListener('click', async () => {
 });
 
 function setActiveTool(button) {
-  toolbar.querySelectorAll('.tool-button').forEach((btn) => btn.classList.remove('active'));
+  const tool = button?.dataset.tool;
+  if (!tool) return;
+  toolbar.querySelectorAll('[data-tool]').forEach((btn) => btn.classList.remove('active'));
   button.classList.add('active');
-  const tool = button.dataset.tool;
   viewer.setTool(tool);
   if (tool === 'brush') {
     brushControls.style.display = 'grid';
@@ -175,6 +207,25 @@ toolbar.addEventListener('click', (event) => {
     window.open('help.html', '_blank', 'noopener');
     return;
   }
+  if (button === copyButton) {
+    const copied = viewer.copySelection();
+    setStatus(copied ? 'Selection copied to clipboard' : 'Select a region before copying');
+    return;
+  }
+  if (button === pasteButton) {
+    const pasted = viewer.beginPasteFromClipboard();
+    setStatus(
+      pasted
+        ? 'Paste ready — click to position, scroll to adjust slices, press Merge or M to apply'
+        : 'Copy a region before pasting',
+    );
+    return;
+  }
+  if (button === mergeButton) {
+    const merged = viewer.commitActivePaste();
+    setStatus(merged ? 'Pasted volume merged into images' : 'No active paste to merge');
+    return;
+  }
   if (!button.dataset.tool) return;
   setActiveTool(button);
 });
@@ -190,27 +241,61 @@ brushIntensityInput.addEventListener('input', () => {
 });
 
 window.addEventListener('keydown', async (event) => {
-  if (event.key === 's' && event.ctrlKey) {
+  if (isTextInput(event.target)) {
+    return;
+  }
+  const key = event.key.toLowerCase();
+  if (key === 's' && event.ctrlKey) {
     event.preventDefault();
     await handleSave();
-  } else if (event.key === 'v' && event.ctrlKey && viewer.clipboard) {
+    return;
+  }
+
+  if (!viewer.currentSeries) {
+    return;
+  }
+
+  if (key === 'c' && event.ctrlKey) {
     event.preventDefault();
-    if (!viewer.currentImage) return;
-    const rect = canvas.getBoundingClientRect();
-    const coords = [
-      (event.clientX - rect.left - viewer.offset.x) /
-        (viewer.scale * (canvas.width / viewer.currentImage.columns)),
-      (event.clientY - rect.top - viewer.offset.y) /
-        (viewer.scale * (canvas.height / viewer.currentImage.rows)),
-    ];
-    viewer.pasteClipboard(coords);
-  } else if (event.key === 'c' && event.ctrlKey && viewer.selection) {
+    const copied = viewer.copySelection();
+    setStatus(copied ? 'Selection copied to clipboard' : 'Select a region before copying');
+    return;
+  }
+
+  if (key === 'v' && event.ctrlKey) {
     event.preventDefault();
-    viewer.copySelection();
+    const pasted = viewer.beginPasteFromClipboard();
+    setStatus(
+      pasted
+        ? 'Paste ready — click to position, scroll to adjust slices, press Merge or M to apply'
+        : 'Copy a region before pasting',
+    );
+    return;
+  }
+
+  if (key === 'm' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    event.preventDefault();
+    const merged = viewer.commitActivePaste();
+    setStatus(merged ? 'Pasted volume merged into images' : 'No active paste to merge');
+    return;
+  }
+
+  if (!event.ctrlKey && !event.metaKey && !event.altKey) {
+    const tool = toolHotkeys[key];
+    if (tool) {
+      const toolButton = toolbar.querySelector(`[data-tool="${tool}"]`);
+      if (toolButton) {
+        event.preventDefault();
+        setActiveTool(toolButton);
+      }
+    }
   }
 });
 
 setActiveTool(toolbar.querySelector('[data-tool="window"]'));
 viewer.setBrushSettings(Number(brushSizeInput.value), Number(brushIntensityInput.value));
 viewer.onImageChange((image) => updateBrushRange(image));
+viewer.onBrushSettingsChange((size, intensity) => {
+  syncBrushInputs(size, intensity);
+});
 updateBrushDisplay();

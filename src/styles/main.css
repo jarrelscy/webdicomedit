@@ -200,13 +200,29 @@ body {
   justify-content: center;
   align-items: center;
   background: #020202;
+  overflow: hidden;
+}
+
+.canvas-stack {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.canvas-stack canvas {
+  display: block;
+  image-rendering: pixelated;
 }
 
 #dicomCanvas,
 #overlayCanvas {
-  max-width: 95%;
-  max-height: 95%;
-  image-rendering: pixelated;
+  transform-origin: top left;
+}
+
+#dicomCanvas {
+  position: relative;
+  z-index: 1;
 }
 
 #overlayCanvas {
@@ -214,6 +230,7 @@ body {
   top: 0;
   left: 0;
   pointer-events: none;
+  z-index: 2;
 }
 
 .image-info {
@@ -233,6 +250,7 @@ body {
   border: 1px dashed var(--accent);
   background: rgba(79, 179, 255, 0.15);
   pointer-events: none;
+  z-index: 5;
 }
 
 .paste-rect {
@@ -242,7 +260,7 @@ body {
   pointer-events: none;
   display: none;
   overflow: hidden;
-  z-index: 4;
+  z-index: 6;
 }
 
 .paste-rect .paste-canvas {

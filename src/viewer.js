@@ -70,6 +70,7 @@ class Viewer {
     this.overlayCtx = overlayCanvas.getContext('2d');
     this.saveManager = saveManager;
     this.imageChangeListeners = new Set();
+    this.brushChangeListeners = new Set();
 
     this.currentSeries = null;
     this.currentImageIndex = 0;
@@ -104,23 +105,45 @@ class Viewer {
     this.container.appendChild(this.pasteRect);
 
     this.initEvents();
+    this.updateOverlayPointerEvents();
   }
 
   setTool(tool) {
     this.activeTool = tool;
-    if (tool === 'brush' || tool === 'select') {
-      this.overlayCanvas.style.pointerEvents = 'auto';
-    } else {
-      this.overlayCanvas.style.pointerEvents = 'none';
-    }
-    if (tool !== 'select') {
-      this.hideSelection();
-    }
+    this.updateOverlayPointerEvents();
   }
 
   setBrushSettings(size, intensity) {
-    this.brushSize = size;
-    this.brushIntensity = intensity;
+    if (Number.isFinite(size)) {
+      this.brushSize = clamp(size, 1, 1024);
+    }
+    if (Number.isFinite(intensity)) {
+      this.brushIntensity = intensity;
+    }
+    this.notifyBrushChange();
+  }
+
+  onBrushSettingsChange(callback) {
+    this.brushChangeListeners.add(callback);
+  }
+
+  notifyBrushChange() {
+    for (const cb of this.brushChangeListeners) {
+      try {
+        cb(this.brushSize, this.brushIntensity);
+      } catch (error) {
+        console.log('[Viewer] brush listener error', error);
+      }
+    }
+  }
+
+  updateOverlayPointerEvents() {
+    const requiresPointer =
+      this.activeTool === 'brush' ||
+      this.activeTool === 'select' ||
+      this.activeTool === 'eyedropper' ||
+      !!this.activePaste;
+    this.overlayCanvas.style.pointerEvents = requiresPointer ? 'auto' : 'none';
   }
 
   setSeries(series) {
@@ -273,6 +296,7 @@ class Viewer {
     console.log('[Viewer] cancelling active paste');
     this.activePaste = null;
     this.pasteRect.style.display = 'none';
+    this.updateOverlayPointerEvents();
   }
 
   refreshPastePreview() {
@@ -348,7 +372,8 @@ class Viewer {
 
   commitActivePaste() {
     if (!this.activePaste || !this.currentImage) {
-      return;
+      console.log('[Viewer] no active paste to commit');
+      return false;
     }
     const { position, region, width, height, depth, zBase } = this.activePaste;
     const startX = Math.floor(position.x);
@@ -395,10 +420,15 @@ class Viewer {
     this.activePaste = null;
     this.pasteRect.style.display = 'none';
     this.render();
+    this.updateOverlayPointerEvents();
+    return true;
   }
 
   copySelection() {
-    if (!this.selection || !this.currentSeries) return;
+    if (!this.selection || !this.currentSeries) {
+      console.log('[Viewer] copy skipped - no selection available');
+      return false;
+    }
     const { start, end } = this.selection;
     const minX = Math.floor(Math.min(start[0], end[0]));
     const minY = Math.floor(Math.min(start[1], end[1]));
@@ -428,33 +458,77 @@ class Viewer {
     }
     this.clipboard = { region, width, height, depth, zMin, zMax };
     console.log('[Viewer] selection copied', { width, height, depth, zMin, zMax });
+    return true;
   }
 
-  pasteClipboard(targetCoords) {
+  beginPasteFromClipboard(centerCoords = null) {
     if (!this.clipboard || !this.currentImage) {
-      return;
+      console.log('[Viewer] paste skipped - clipboard empty or no image');
+      return false;
     }
-    const startX = Math.floor(targetCoords[0]);
-    const startY = Math.floor(targetCoords[1]);
+    const depth = this.clipboard.depth ?? 1;
     this.activePaste = {
-      position: { x: startX, y: startY },
+      position: { x: 0, y: 0 },
       region: this.clipboard.region.slice(0),
       width: this.clipboard.width,
       height: this.clipboard.height,
-      depth: this.clipboard.depth ?? 1,
-      zBase: this.currentImageIndex - Math.floor((this.clipboard.depth ?? 1) / 2),
+      depth,
+      zBase: this.currentImageIndex - Math.floor(depth / 2),
       dragging: false,
       dragOffset: { x: 0, y: 0 },
     };
+    const targetCenter =
+      centerCoords ?? [this.currentImage.columns / 2, this.currentImage.rows / 2];
     console.log('[Viewer] paste initiated', {
-      position: this.activePaste.position,
+      center: targetCenter,
       width: this.activePaste.width,
       height: this.activePaste.height,
       depth: this.activePaste.depth,
       zBase: this.activePaste.zBase,
     });
+    this.moveActivePasteCenter(targetCenter);
+    this.updateOverlayPointerEvents();
+    return true;
+  }
+
+  hasActivePaste() {
+    return !!this.activePaste;
+  }
+
+  moveActivePasteCenter(centerCoords) {
+    if (!this.activePaste || !this.currentImage) {
+      return;
+    }
+    const [cx, cy] = centerCoords;
+    const { width, height, depth } = this.activePaste;
+    this.activePaste.position = {
+      x: cx - width / 2,
+      y: cy - height / 2,
+    };
+    this.activePaste.zBase = this.currentImageIndex - Math.floor(depth / 2);
+    this.activePaste.dragging = false;
+    this.activePaste.dragOffset = { x: 0, y: 0 };
+    console.log('[Viewer] paste center moved', {
+      center: { x: cx, y: cy, z: this.currentImageIndex },
+      position: this.activePaste.position,
+      depth,
+      zBase: this.activePaste.zBase,
+    });
     this.refreshPastePreview();
     this.updatePasteOverlay();
+  }
+
+  sampleBrushIntensity(coords) {
+    const image = this.currentImage;
+    if (!image) {
+      return;
+    }
+    const [x, y] = coords;
+    const ix = clamp(Math.round(x), 0, image.columns - 1);
+    const iy = clamp(Math.round(y), 0, image.rows - 1);
+    const value = image.pixelArray[iy * image.columns + ix];
+    console.log('[Viewer] eyedropper sampled', { x: ix, y: iy, value });
+    this.setBrushSettings(this.brushSize, value);
   }
 
   coordsFromPointer(event) {
@@ -598,11 +672,11 @@ class Viewer {
       if (this.activePaste) {
         const sliceIndex = this.currentImageIndex - this.activePaste.zBase;
         if (sliceIndex < 0 || sliceIndex >= this.activePaste.depth) {
-          console.log('[Viewer] ignoring paste interaction outside active volume', {
+          console.log('[Viewer] realigning paste volume for current slice', {
             sliceIndex,
             depth: this.activePaste.depth,
           });
-          return;
+          this.activePaste.zBase = this.currentImageIndex - Math.floor(this.activePaste.depth / 2);
         }
         const { position, width, height } = this.activePaste;
         const inside =
@@ -611,8 +685,8 @@ class Viewer {
           coords[1] >= position.y &&
           coords[1] <= position.y + height;
         if (!inside) {
-          console.log('[Viewer] committing paste from outside click');
-          this.commitActivePaste();
+          console.log('[Viewer] moving paste center from click');
+          this.moveActivePasteCenter(coords);
           return;
         }
         this.activePaste.dragging = true;
@@ -662,6 +736,8 @@ class Viewer {
         this.render();
       } else if (this.activeTool === 'select') {
         this.startSelection(coords);
+      } else if (this.activeTool === 'eyedropper') {
+        this.sampleBrushIntensity(coords);
       }
     };
 
@@ -711,6 +787,8 @@ class Viewer {
           return;
         }
         this.updateSelection(coords);
+      } else if (this.activeTool === 'eyedropper' && this.isDragging) {
+        this.sampleBrushIntensity(coords);
       }
     };
 
@@ -768,11 +846,6 @@ class Viewer {
         this.prevImage();
       } else if (event.key === 'ArrowDown') {
         this.nextImage();
-      } else if (event.key === 'c' && event.ctrlKey && this.selection) {
-        this.copySelection();
-      } else if (event.key === 'v' && event.ctrlKey && this.clipboard) {
-        const center = [this.currentImage.columns / 2, this.currentImage.rows / 2];
-        this.pasteClipboard(center);
       }
     });
   }

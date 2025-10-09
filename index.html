@@ -29,15 +29,29 @@
           <button id="helpButton" class="tool-button" title="Help">
             Help
           </button>
+          <button id="copyButton" class="tool-button" title="Copy (Ctrl+C)">
+            Copy
+          </button>
+          <button id="pasteButton" class="tool-button" title="Paste (Ctrl+V)">
+            Paste
+          </button>
+          <button id="mergeButton" class="tool-button" title="Merge (M)">
+            Merge
+          </button>
           <button data-tool="window" class="tool-button active" title="Window (W)">Window</button>
           <button data-tool="pan" class="tool-button" title="Pan (P)">Pan</button>
           <button data-tool="zoom" class="tool-button" title="Zoom (Z)">Zoom</button>
           <button data-tool="brush" class="tool-button" title="Brush (B)">Brush</button>
           <button data-tool="select" class="tool-button" title="Select (S)">Select</button>
+          <button data-tool="eyedropper" class="tool-button" title="Eyedropper (K)">
+            Eyedropper
+          </button>
         </div>
         <div class="viewer-container">
-          <canvas id="dicomCanvas" width="512" height="512"></canvas>
-          <canvas id="overlayCanvas" width="512" height="512"></canvas>
+          <div class="canvas-stack">
+            <canvas id="dicomCanvas" width="512" height="512"></canvas>
+            <canvas id="overlayCanvas" width="512" height="512"></canvas>
+          </div>
           <div class="image-info" id="imageInfo"></div>
           <div class="brush-overlay" id="brushControls">
             <div class="brush-control">
