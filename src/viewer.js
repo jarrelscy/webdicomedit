@@ -87,6 +87,7 @@ class Viewer {
     this.selectionRect = document.createElement('div');
     this.selectionRect.className = 'selection-rect';
     this.selectionVisible = false;
+    this.pointerTarget = null;
 
     this.container = canvas.parentElement;
     this.container.appendChild(this.selectionRect);
@@ -270,10 +271,11 @@ class Viewer {
 
   coordsFromPointer(event) {
     const rect = this.canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left - this.offset.x;
-    const y = event.clientY - rect.top - this.offset.y;
-    const scale = this.scale * (this.canvas.width / this.currentImage.columns);
-    return [x / scale, y / scale];
+    const scaleX = rect.width / this.canvas.width || 1;
+    const scaleY = rect.height / this.canvas.height || 1;
+    const x = (event.clientX - rect.left) / scaleX;
+    const y = (event.clientY - rect.top) / scaleY;
+    return [x, y];
   }
 
   drawImage() {
@@ -369,11 +371,14 @@ class Viewer {
     const minY = Math.min(start[1], end[1]);
     const width = Math.abs(end[0] - start[0]);
     const height = Math.abs(end[1] - start[1]);
-    const scale = this.scale * (this.canvas.width / this.currentImage.columns);
-    const left = this.canvas.offsetLeft + this.offset.x + minX * scale;
-    const top = this.canvas.offsetTop + this.offset.y + minY * scale;
-    const displayWidth = width * scale;
-    const displayHeight = height * scale;
+    const canvasRect = this.canvas.getBoundingClientRect();
+    const containerRect = this.container.getBoundingClientRect();
+    const scaleX = canvasRect.width / this.canvas.width || 1;
+    const scaleY = canvasRect.height / this.canvas.height || 1;
+    const left = canvasRect.left - containerRect.left + minX * scaleX;
+    const top = canvasRect.top - containerRect.top + minY * scaleY;
+    const displayWidth = width * scaleX;
+    const displayHeight = height * scaleY;
     this.selectionRect.style.display = 'block';
     this.selectionRect.style.left = `${left}px`;
     this.selectionRect.style.top = `${top}px`;
@@ -390,6 +395,19 @@ class Viewer {
     const handlePointerDown = (event) => {
       if (!this.currentImage) return;
       this.isDragging = true;
+      if (event.target.setPointerCapture) {
+        try {
+          event.target.setPointerCapture(event.pointerId);
+          this.pointerTarget = event.target;
+          console.log('[Viewer] pointer captured', {
+            pointerId: event.pointerId,
+            target: event.target.tagName,
+            tool: this.activeTool,
+          });
+        } catch (error) {
+          console.log('[Viewer] pointer capture failed', error);
+        }
+      }
       this.lastPointer = { x: event.clientX, y: event.clientY };
       const coords = this.coordsFromPointer(event);
       if (this.activeTool === 'brush') {
@@ -432,11 +450,25 @@ class Viewer {
       }
     };
 
-    const handlePointerUp = () => {
+    const handlePointerUp = (event) => {
       if (this.activeTool === 'select' && this.selection) {
         this.finishSelection();
       }
       this.isDragging = false;
+      if (this.pointerTarget && this.pointerTarget.releasePointerCapture) {
+        try {
+          if (event && typeof event.pointerId === 'number') {
+            this.pointerTarget.releasePointerCapture(event.pointerId);
+          }
+          console.log('[Viewer] pointer released', {
+            pointerId: event?.pointerId,
+            target: this.pointerTarget.tagName,
+          });
+        } catch (error) {
+          console.log('[Viewer] pointer release failed', error);
+        }
+      }
+      this.pointerTarget = null;
     };
 
     const handleWheel = (event) => {
@@ -454,10 +486,12 @@ class Viewer {
     this.overlayCanvas.addEventListener('pointermove', handlePointerMove);
     this.overlayCanvas.addEventListener('pointerup', handlePointerUp);
     this.overlayCanvas.addEventListener('pointerleave', handlePointerUp);
+    this.overlayCanvas.addEventListener('pointercancel', handlePointerUp);
     this.canvas.addEventListener('pointerdown', handlePointerDown);
     this.canvas.addEventListener('pointermove', handlePointerMove);
     this.canvas.addEventListener('pointerup', handlePointerUp);
     this.canvas.addEventListener('pointerleave', handlePointerUp);
+    this.canvas.addEventListener('pointercancel', handlePointerUp);
     this.canvas.addEventListener('wheel', handleWheel, { passive: false });
 
     window.addEventListener('keydown', (event) => {
