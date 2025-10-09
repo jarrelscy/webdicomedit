@@ -392,7 +392,7 @@ class Viewer {
 
     const handlePointerMove = (event) => {
       if (!this.currentImage) {
-        console.debug('[Viewer] pointermove ignored - no current image', {
+        console.log('[Viewer] pointermove ignored - no current image', {
           tool: this.activeTool,
           isDragging: this.isDragging,
         });
@@ -400,7 +400,7 @@ class Viewer {
       }
 
       const coords = this.coordsFromPointer(event);
-      console.debug('[Viewer] pointermove received', {
+      console.log('[Viewer] pointermove received', {
         tool: this.activeTool,
         isDragging: this.isDragging,
         coords,
@@ -408,24 +408,24 @@ class Viewer {
       });
 
       if (this.activeTool === 'brush' && this.isDragging) {
-        console.debug('[Viewer] pointermove -> brush update');
+        console.log('[Viewer] pointermove -> brush update');
         this.applyBrush(this.currentImage, coords);
         this.render();
       } else if (this.activeTool === 'window' && this.isDragging) {
         const dx = event.clientX - this.lastPointer.x;
         const dy = event.clientY - this.lastPointer.y;
-        console.debug('[Viewer] pointermove -> window adjust', { dx, dy });
+        console.log('[Viewer] pointermove -> window adjust', { dx, dy });
         this.adjustWindow(dx, dy);
         this.lastPointer = { x: event.clientX, y: event.clientY };
       } else if (this.activeTool === 'pan' && this.isDragging) {
         const dx = event.clientX - this.lastPointer.x;
         const dy = event.clientY - this.lastPointer.y;
-        console.debug('[Viewer] pointermove -> pan adjust', { dx, dy });
+        console.log('[Viewer] pointermove -> pan adjust', { dx, dy });
         this.adjustPan(dx, dy);
         this.lastPointer = { x: event.clientX, y: event.clientY };
       } else if (this.activeTool === 'zoom' && this.isDragging) {
         const dy = event.clientY - this.lastPointer.y;
-        console.debug('[Viewer] pointermove -> zoom adjust', { dy });
+        console.log('[Viewer] pointermove -> zoom adjust', { dy });
         this.adjustZoom(dy, coords);
         this.lastPointer = { x: event.clientX, y: event.clientY };
       } else if (this.activeTool === 'select' && this.isDragging) {
@@ -434,7 +434,7 @@ class Viewer {
             coords,
           });
         } else {
-          console.debug('[Viewer] pointermove -> selection update', {
+          console.log('[Viewer] pointermove -> selection update', {
             start: this.selection.start,
             end: this.selection.end,
             next: coords,
@@ -442,7 +442,7 @@ class Viewer {
         }
         this.updateSelection(coords);
       } else {
-        console.debug('[Viewer] pointermove ignored - no matching branch', {
+        console.log('[Viewer] pointermove ignored - no matching branch', {
           tool: this.activeTool,
           isDragging: this.isDragging,
         });
