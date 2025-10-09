@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web DICOM Editor – Help</title>
+    <link rel="stylesheet" href="src/styles/help.css" />
+  </head>
+  <body>
+    <header class="help-header">
+      <h1>Web DICOM Editor Help</h1>
+      <a class="back-link" href="index.html">Back to Editor</a>
+    </header>
+    <main class="help-content">
+      <nav class="help-toc">
+        <h2>Topics</h2>
+        <ul>
+          <li><a href="#overview">Overview</a></li>
+          <li><a href="#loading">Loading DICOM Data</a></li>
+          <li><a href="#series-navigation">Series Navigation</a></li>
+          <li><a href="#viewer-tools">Viewer Tools</a></li>
+          <li><a href="#brush-controls">Brush Controls</a></li>
+          <li><a href="#selection">Selection &amp; Copy / Paste</a></li>
+          <li><a href="#keyboard-shortcuts">Keyboard Shortcuts</a></li>
+          <li><a href="#saving">Saving Changes</a></li>
+          <li><a href="#troubleshooting">Troubleshooting</a></li>
+        </ul>
+      </nav>
+      <article class="help-article">
+        <section id="overview">
+          <h2>Overview</h2>
+          <p>
+            The Web DICOM Editor lets you review and edit DICOM images entirely in your
+            browser. Load a folder of scans, explore each series, adjust windowing, and edit
+            pixels using painting and selection tools. All edits stay in memory until you save
+            them to an output folder of your choice.
+          </p>
+        </section>
+        <section id="loading">
+          <h2>Loading DICOM Data</h2>
+          <ul>
+            <li>
+              Click <strong>Load DICOM Folder</strong> to pick the input folder. The application
+              scans all nested folders and loads any file that contains the DICOM signature.
+            </li>
+            <li>
+              Choose <strong>Output Folder</strong> to tell the editor where to store saved files.
+            </li>
+            <li>
+              The status message in the header confirms how many series were discovered or
+              reports any issues.
+            </li>
+          </ul>
+        </section>
+        <section id="series-navigation">
+          <h2>Series Navigation</h2>
+          <ul>
+            <li>The left panel lists every series with a thumbnail, number, and description.</li>
+            <li>Click a series card to load its images into the viewer.</li>
+            <li>
+              Use the mouse wheel, trackpad scroll, or the <kbd>↑</kbd> / <kbd>↓</kbd> keys to move
+              through slices ordered by <em>InstanceNumber</em>.
+            </li>
+            <li>The information overlay in the viewer shows slice details, windowing, and zoom.</li>
+          </ul>
+        </section>
+        <section id="viewer-tools">
+          <h2>Viewer Tools</h2>
+          <p>Select a tool from the right-hand toolbar to control how pointer drags affect the view.</p>
+          <dl>
+            <dt>Window (W)</dt>
+            <dd>Drag horizontally to adjust window width and vertically to adjust window level.</dd>
+            <dt>Pan (P)</dt>
+            <dd>Drag to reposition the image when zoomed in.</dd>
+            <dt>Zoom (Z)</dt>
+            <dd>Drag up to zoom in and down to zoom out. Scroll wheel zooming is also supported.</dd>
+            <dt>Brush (B)</dt>
+            <dd>Paint directly onto the active slice using the brush size and intensity controls.</dd>
+            <dt>Select (S)</dt>
+            <dd>
+              Drag to create a selection volume. Scroll while dragging to extend the selection
+              above or below the starting slice.
+            </dd>
+            <dt>Save</dt>
+            <dd>Click to write all modified images to the chosen output folder.</dd>
+            <dt>Help</dt>
+            <dd>Open this help guide in a new tab.</dd>
+          </dl>
+        </section>
+        <section id="brush-controls">
+          <h2>Brush Controls</h2>
+          <p>
+            When the brush tool is active, a floating panel appears in the top-right corner of the
+            viewer.
+          </p>
+          <ul>
+            <li><strong>Brush Size</strong> sets the diameter in pixels of the paint stroke.</li>
+            <li><strong>Intensity</strong> controls the grayscale value written to the DICOM data.</li>
+            <li>The numeric readouts update live as you adjust the sliders.</li>
+          </ul>
+        </section>
+        <section id="selection">
+          <h2>Selection &amp; Copy / Paste</h2>
+          <ul>
+            <li>Use the Select tool to drag out a rectangular selection on the current slice.</li>
+            <li>
+              Scroll during the drag to extend the selection through adjacent slices. The
+              highlighted volume updates as you establish the upper and lower bounds.
+            </li>
+            <li>Press <kbd>Ctrl</kbd> + <kbd>C</kbd> to copy the selected volume to the clipboard.</li>
+            <li>
+              Navigate to another slice or series. The paste preview appears centred on the
+              current slice and can be dragged before committing.
+            </li>
+            <li>
+              Click to position the preview, then click outside the overlay to merge the volume
+              into the underlying images. The slice you paste on becomes the midpoint of the
+              applied volume along the Z axis.
+            </li>
+            <li>If you change series, both selection and paste previews reset to avoid conflicts.</li>
+          </ul>
+        </section>
+        <section id="keyboard-shortcuts">
+          <h2>Keyboard Shortcuts</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Action</th>
+                <th>Shortcut</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Save</td><td><kbd>Ctrl</kbd> + <kbd>S</kbd></td></tr>
+              <tr><td>Copy selection</td><td><kbd>Ctrl</kbd> + <kbd>C</kbd></td></tr>
+              <tr><td>Paste volume</td><td><kbd>Ctrl</kbd> + <kbd>V</kbd></td></tr>
+              <tr><td>Next slice</td><td><kbd>↓</kbd> or scroll down</td></tr>
+              <tr><td>Previous slice</td><td><kbd>↑</kbd> or scroll up</td></tr>
+              <tr><td>Window tool</td><td><kbd>W</kbd></td></tr>
+              <tr><td>Pan tool</td><td><kbd>P</kbd></td></tr>
+              <tr><td>Zoom tool</td><td><kbd>Z</kbd></td></tr>
+              <tr><td>Brush tool</td><td><kbd>B</kbd></td></tr>
+              <tr><td>Select tool</td><td><kbd>S</kbd></td></tr>
+            </tbody>
+          </table>
+        </section>
+        <section id="saving">
+          <h2>Saving Changes</h2>
+          <ul>
+            <li>Click <strong>Save</strong> or press <kbd>Ctrl</kbd> + <kbd>S</kbd> to export edits.</li>
+            <li>
+              All modified instances are written to the output folder using their original file
+              names and directory structure.
+            </li>
+            <li>The header status message lists how many files were saved, and the unsaved
+              changes indicator clears once the operation completes.</li>
+          </ul>
+        </section>
+        <section id="troubleshooting">
+          <h2>Troubleshooting</h2>
+          <ul>
+            <li>
+              If nothing appears after loading, confirm the selected folder contains valid DICOM
+              files and that the browser has permission to read them.
+            </li>
+            <li>
+              Use the browser console to review diagnostic logs for loading, tool changes, and
+              selection updates.
+            </li>
+            <li>
+              Re-select the output folder if saving fails—browsers can revoke directory access
+              after page reloads.
+            </li>
+          </ul>
+        </section>
+      </article>
+    </main>
+    <footer class="help-footer">
+      <p>&copy; <span id="year"></span> Web DICOM Editor</p>
+    </footer>
+    <script>
+      document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+  </body>
+</html>

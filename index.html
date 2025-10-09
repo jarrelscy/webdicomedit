@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web DICOM Editor</title>
+    <link rel="stylesheet" href="src/styles/main.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="folder-controls">
+        <label class="folder-button">
+          <input type="file" id="inputFolder" webkitdirectory multiple hidden />
+          <span>Load DICOM Folder</span>
+        </label>
+        <button id="outputFolderButton" class="folder-button">Choose Output Folder</button>
+        <span id="folderStatus" class="status"></span>
+      </div>
+      <div class="save-indicator" id="saveIndicator">Unsaved changes</div>
+    </header>
+
+    <main class="app-main">
+      <section class="series-panel" id="seriesPanel"></section>
+      <section class="viewer-panel">
+        <div class="toolbar" id="toolbar">
+          <button id="saveButton" class="tool-button" title="Save (Ctrl+S)">
+            Save
+          </button>
+          <button id="helpButton" class="tool-button" title="Help">
+            Help
+          </button>
+          <button id="copyButton" class="tool-button" title="Copy (Ctrl+C)">
+            Copy
+          </button>
+          <button id="pasteButton" class="tool-button" title="Paste (Ctrl+V)">
+            Paste
+          </button>
+          <button id="mergeButton" class="tool-button" title="Merge (M)">
+            Merge
+          </button>
+          <button data-tool="window" class="tool-button active" title="Window (W)">Window</button>
+          <button data-tool="pan" class="tool-button" title="Pan (P)">Pan</button>
+          <button data-tool="zoom" class="tool-button" title="Zoom (Z)">Zoom</button>
+          <button data-tool="brush" class="tool-button" title="Brush (B)">Brush</button>
+          <button data-tool="select" class="tool-button" title="Select (S)">Select</button>
+          <button data-tool="eyedropper" class="tool-button" title="Eyedropper (K)">
+            Eyedropper
+          </button>
+        </div>
+        <div class="viewer-container">
+          <div class="canvas-stack">
+            <canvas id="dicomCanvas" width="512" height="512"></canvas>
+            <canvas id="overlayCanvas" width="512" height="512"></canvas>
+          </div>
+          <div class="image-info" id="imageInfo"></div>
+          <div class="brush-overlay" id="brushControls">
+            <div class="brush-control">
+              <div class="brush-control-header">
+                <span>Brush Size</span>
+                <span class="brush-control-value" id="brushSizeValue">20</span>
+              </div>
+              <input type="range" min="1" max="100" value="20" id="brushSize" />
+            </div>
+            <div class="brush-control">
+              <div class="brush-control-header">
+                <span>Intensity</span>
+                <span class="brush-control-value" id="brushIntensityValue">4000</span>
+              </div>
+              <input type="range" min="0" max="65535" value="4000" id="brushIntensity" />
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <template id="seriesCardTemplate">
+      <div class="series-card">
+        <canvas class="series-thumbnail" width="80" height="80"></canvas>
+        <div class="series-meta">
+          <div class="series-number"></div>
+          <div class="series-description"></div>
+        </div>
+      </div>
+    </template>
+
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>
