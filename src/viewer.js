@@ -418,6 +418,7 @@ class Viewer {
       zBase,
     });
     this.activePaste = null;
+    this.clipboard = null;
     this.pasteRect.style.display = 'none';
     this.render();
     this.updateOverlayPointerEvents();
