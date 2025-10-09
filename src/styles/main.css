@@ -1,0 +1,253 @@
+:root {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  color: #f5f5f5;
+  background-color: #1f1f1f;
+  --accent: #4fb3ff;
+  --accent-dark: #0077cc;
+  --toolbar-bg: #2a2a2a;
+  --panel-bg: #191919;
+  --header-height: 64px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  background: #101010;
+  border-bottom: 1px solid #333;
+  height: var(--header-height);
+}
+
+.folder-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.folder-button {
+  background: var(--accent);
+  color: #04121f;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.2s ease;
+}
+
+.folder-button:hover {
+  background: var(--accent-dark);
+  color: white;
+}
+
+.status {
+  color: #aaa;
+}
+
+.save-indicator {
+  font-size: 0.9rem;
+  color: #ffb74d;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.save-indicator.visible {
+  opacity: 1;
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  height: calc(100vh - var(--header-height));
+  min-height: 0;
+}
+
+.series-panel {
+  width: 260px;
+  background: var(--panel-bg);
+  border-right: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 0.75rem;
+  overflow-y: auto;
+}
+
+.series-card {
+  background: #232323;
+  border-radius: 12px;
+  padding: 0.5rem;
+  display: grid;
+  gap: 0.5rem;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border 0.2s ease, transform 0.2s ease;
+}
+
+.series-card:hover {
+  transform: translateY(-2px);
+}
+
+.series-card.active {
+  border-color: var(--accent);
+}
+
+.series-thumbnail {
+  width: 100%;
+  border-radius: 8px;
+  background: #111;
+}
+
+.series-meta {
+  font-size: 0.85rem;
+  color: #ccc;
+}
+
+.viewer-panel {
+  flex: 1;
+  display: flex;
+  background: #111;
+  position: relative;
+  min-height: 0;
+}
+
+.toolbar {
+  width: 120px;
+  background: var(--toolbar-bg);
+  border-right: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.tool-button {
+  padding: 0.6rem;
+  border-radius: 10px;
+  border: 1px solid #333;
+  background: #1f1f1f;
+  color: #f0f0f0;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.tool-button:hover,
+.tool-button.active {
+  background: var(--accent);
+  color: #04121f;
+}
+
+.brush-overlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(68, 68, 68, 0.9);
+  color: #fff;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+  display: none;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  z-index: 3;
+}
+
+.brush-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.brush-control-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  font-weight: 600;
+}
+
+.brush-control-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.brush-overlay input[type='range'] {
+  width: 220px;
+}
+
+.viewer-container {
+  position: relative;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #020202;
+}
+
+#dicomCanvas,
+#overlayCanvas {
+  max-width: 95%;
+  max-height: 95%;
+  image-rendering: pixelated;
+}
+
+#overlayCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.image-info {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  color: #fff;
+  pointer-events: none;
+}
+
+.selection-rect {
+  position: absolute;
+  border: 1px dashed var(--accent);
+  background: rgba(79, 179, 255, 0.15);
+  pointer-events: none;
+}
+
+.paste-rect {
+  position: absolute;
+  border: 1px solid var(--accent);
+  background: rgba(79, 179, 255, 0.25);
+  pointer-events: none;
+  display: none;
+  overflow: hidden;
+  z-index: 4;
+}
+
+.paste-rect .paste-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: pixelated;
+}
