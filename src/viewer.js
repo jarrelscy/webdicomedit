@@ -459,6 +459,7 @@ class Viewer {
     }
     this.clipboard = { region, width, height, depth, zMin, zMax };
     console.log('[Viewer] selection copied', { width, height, depth, zMin, zMax });
+    this.hideSelection();
     return true;
   }
 
