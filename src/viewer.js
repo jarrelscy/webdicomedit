@@ -156,6 +156,11 @@ function poissonBlendIntoImage(sourcePatch, width, height, startX, startY, image
   const maxIterations = 500;
   const tolerance = 0.1;
 
+  const interiorMask = new Uint8Array(total);
+  for (let i = 0; i < total; i++) {
+    interiorMask[i] = valid[i] && !boundary[i] ? 1 : 0;
+  }
+
   for (let iteration = 0; iteration < maxIterations; iteration++) {
     let maxDiff = 0;
     for (let y = 0; y < height; y++) {
@@ -192,6 +197,27 @@ function poissonBlendIntoImage(sourcePatch, width, height, startX, startY, image
   }
 
   const solution = prev;
+  if (interiorCount > 0) {
+    let interiorSourceSum = 0;
+    let interiorSolutionSum = 0;
+    for (let i = 0; i < total; i++) {
+      if (!interiorMask[i]) {
+        continue;
+      }
+      interiorSourceSum += source[i];
+      interiorSolutionSum += solution[i];
+    }
+    const interiorMean = interiorSolutionSum / interiorCount;
+    const sourceMean = interiorSourceSum / interiorCount;
+    const offset = sourceMean - interiorMean;
+    if (Number.isFinite(offset) && Math.abs(offset) > 0.001) {
+      for (let i = 0; i < total; i++) {
+        if (interiorMask[i]) {
+          solution[i] += offset;
+        }
+      }
+    }
+  }
   let changed = false;
   for (let y = 0; y < height; y++) {
     const globalY = startY + y;
@@ -624,6 +650,9 @@ class Viewer {
       }
     }
     this.clipboard = { region, width, height, depth, zMin, zMax };
+    if (this.selection) {
+      this.selection.captureZ = false;
+    }
     console.log('[Viewer] selection copied', { width, height, depth, zMin, zMax });
     return true;
   }
@@ -802,6 +831,17 @@ class Viewer {
     if (!this.selection) {
       this.selectionRect.style.display = 'none';
       console.log('[Viewer] selection rect hidden');
+      return;
+    }
+    const currentSlice = this.currentImageIndex;
+    const { zMin = currentSlice, zMax = currentSlice } = this.selection;
+    if (currentSlice < zMin || currentSlice > zMax) {
+      this.selectionRect.style.display = 'none';
+      console.log('[Viewer] selection rect hidden - out of plane', {
+        currentSlice,
+        zMin,
+        zMax,
+      });
       return;
     }
     const { start, end } = this.selection;
