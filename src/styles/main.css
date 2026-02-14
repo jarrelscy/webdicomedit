@@ -170,6 +170,41 @@ body {
   z-index: 3;
 }
 
+.text-overlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(68, 68, 68, 0.9);
+  color: #fff;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+  display: none;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  z-index: 3;
+  min-width: 240px;
+}
+
+.text-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.text-control span {
+  font-weight: 600;
+}
+
+.text-control input,
+.text-control select {
+  background: #1f1f1f;
+  color: #f0f0f0;
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 0.4rem 0.5rem;
+}
+
 .brush-control {
   display: flex;
   flex-direction: column;
