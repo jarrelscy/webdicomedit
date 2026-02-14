@@ -43,6 +43,7 @@
           <button data-tool="zoom" class="tool-button" title="Zoom (Z)">Zoom</button>
           <button data-tool="brush" class="tool-button" title="Brush (B)">Brush</button>
           <button data-tool="select" class="tool-button" title="Select (S)">Select</button>
+          <button data-tool="text" class="tool-button" title="Text (T)">Text</button>
           <button data-tool="eyedropper" class="tool-button" title="Eyedropper (K)">
             Eyedropper
           </button>
@@ -68,6 +69,26 @@
               </div>
               <input type="range" min="0" max="65535" value="4000" id="brushIntensity" />
             </div>
+          </div>
+          <div class="text-overlay" id="textControls">
+            <label class="text-control">
+              <span>Text</span>
+              <input type="text" id="textValue" value="Sample Text" maxlength="120" />
+            </label>
+            <label class="text-control">
+              <span>Font</span>
+              <select id="textFont">
+                <option value="Arial">Arial</option>
+                <option value="Helvetica">Helvetica</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Courier New">Courier New</option>
+                <option value="Verdana">Verdana</option>
+              </select>
+            </label>
+            <label class="text-control">
+              <span>Font Size</span>
+              <input type="number" id="textSize" min="8" max="120" value="24" />
+            </label>
           </div>
         </div>
       </section>

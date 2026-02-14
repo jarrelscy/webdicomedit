@@ -17,6 +17,10 @@ const brushSizeInput = document.getElementById('brushSize');
 const brushIntensityInput = document.getElementById('brushIntensity');
 const brushSizeValue = document.getElementById('brushSizeValue');
 const brushIntensityValue = document.getElementById('brushIntensityValue');
+const textControls = document.getElementById('textControls');
+const textValueInput = document.getElementById('textValue');
+const textFontInput = document.getElementById('textFont');
+const textSizeInput = document.getElementById('textSize');
 const canvas = document.getElementById('dicomCanvas');
 const overlayCanvas = document.getElementById('overlayCanvas');
 const infoBox = document.getElementById('imageInfo');
@@ -36,6 +40,7 @@ const toolHotkeys = {
   b: 'brush',
   s: 'select',
   k: 'eyedropper',
+  t: 'text',
 };
 
 const isTextInput = (element) => {
@@ -194,6 +199,12 @@ function setActiveTool(button) {
   } else {
     brushControls.style.display = 'none';
   }
+
+  if (tool === 'text') {
+    textControls.style.display = 'grid';
+  } else {
+    textControls.style.display = 'none';
+  }
 }
 
 toolbar.addEventListener('click', (event) => {
@@ -238,6 +249,19 @@ brushSizeInput.addEventListener('input', () => {
 brushIntensityInput.addEventListener('input', () => {
   viewer.setBrushSettings(Number(brushSizeInput.value), Number(brushIntensityInput.value));
   updateBrushDisplay();
+});
+
+
+textValueInput.addEventListener('input', () => {
+  viewer.setTextSettings(textValueInput.value, textFontInput.value, Number(textSizeInput.value));
+});
+
+textFontInput.addEventListener('change', () => {
+  viewer.setTextSettings(textValueInput.value, textFontInput.value, Number(textSizeInput.value));
+});
+
+textSizeInput.addEventListener('input', () => {
+  viewer.setTextSettings(textValueInput.value, textFontInput.value, Number(textSizeInput.value));
 });
 
 window.addEventListener('keydown', async (event) => {
@@ -294,6 +318,7 @@ window.addEventListener('keydown', async (event) => {
 
 setActiveTool(toolbar.querySelector('[data-tool="window"]'));
 viewer.setBrushSettings(Number(brushSizeInput.value), Number(brushIntensityInput.value));
+viewer.setTextSettings(textValueInput.value, textFontInput.value, Number(textSizeInput.value));
 viewer.onImageChange((image) => updateBrushRange(image));
 viewer.onBrushSettingsChange((size, intensity) => {
   syncBrushInputs(size, intensity);

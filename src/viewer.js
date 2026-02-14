@@ -83,6 +83,10 @@ class Viewer {
     this.lastPointer = null;
     this.brushSize = 20;
     this.brushIntensity = 4000;
+    this.textValue = 'Sample Text';
+    this.textFont = 'Arial';
+    this.textSize = 24;
+    this.textAnnotations = new WeakMap();
     this.selection = null;
     this.clipboard = null;
     this.selectionRect = document.createElement('div');
@@ -110,6 +114,9 @@ class Viewer {
 
   setTool(tool) {
     this.activeTool = tool;
+    if (tool !== 'select') {
+      this.hideSelection();
+    }
     this.updateOverlayPointerEvents();
   }
 
@@ -121,6 +128,59 @@ class Viewer {
       this.brushIntensity = intensity;
     }
     this.notifyBrushChange();
+  }
+
+
+  setTextSettings(value, font, size) {
+    if (typeof value === 'string') {
+      this.textValue = value;
+    }
+    if (typeof font === 'string' && font.trim()) {
+      this.textFont = font;
+    }
+    if (Number.isFinite(size)) {
+      this.textSize = clamp(size, 8, 120);
+    }
+  }
+
+  addTextAnnotation(coords) {
+    const image = this.currentImage;
+    const text = this.textValue.trim();
+    if (!image || !text) {
+      return;
+    }
+    const annotations = this.textAnnotations.get(image) ?? [];
+    annotations.push({
+      text,
+      x: coords[0],
+      y: coords[1],
+      font: this.textFont,
+      size: this.textSize,
+    });
+    this.textAnnotations.set(image, annotations);
+    this.render();
+  }
+
+  drawTextAnnotations() {
+    const image = this.currentImage;
+    if (!image) {
+      return;
+    }
+    const annotations = this.textAnnotations.get(image) ?? [];
+    if (!annotations.length) {
+      return;
+    }
+    this.overlayCtx.save();
+    this.overlayCtx.textBaseline = 'top';
+    for (const annotation of annotations) {
+      this.overlayCtx.font = `${annotation.size}px ${annotation.font}`;
+      this.overlayCtx.lineWidth = Math.max(2, Math.round(annotation.size * 0.1));
+      this.overlayCtx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+      this.overlayCtx.fillStyle = '#4fb3ff';
+      this.overlayCtx.strokeText(annotation.text, annotation.x, annotation.y);
+      this.overlayCtx.fillText(annotation.text, annotation.x, annotation.y);
+    }
+    this.overlayCtx.restore();
   }
 
   onBrushSettingsChange(callback) {
@@ -142,6 +202,7 @@ class Viewer {
       this.activeTool === 'brush' ||
       this.activeTool === 'select' ||
       this.activeTool === 'eyedropper' ||
+      this.activeTool === 'text' ||
       !!this.activePaste;
     this.overlayCanvas.style.pointerEvents = requiresPointer ? 'auto' : 'none';
   }
@@ -565,6 +626,7 @@ class Viewer {
     this.overlayCanvas.style.transform = this.canvas.style.transform;
 
     this.overlayCtx.clearRect(0, 0, columns, rows);
+    this.drawTextAnnotations();
   }
 
   updateInfo() {
@@ -740,6 +802,8 @@ class Viewer {
         this.startSelection(coords);
       } else if (this.activeTool === 'eyedropper') {
         this.sampleBrushIntensity(coords);
+      } else if (this.activeTool === 'text') {
+        this.addTextAnnotation(coords);
       }
     };
 
