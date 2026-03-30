@@ -162,7 +162,7 @@ inputFolder.addEventListener('change', async (event) => {
   setStatus('Loading series…');
   seriesList = await loadDicomSeries(files);
   if (!seriesList.length) {
-    setStatus('No DICOM files found');
+    setStatus('No supported DICOM or NPZ files found');
     seriesPanel.innerHTML = '';
     return;
   }

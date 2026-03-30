@@ -1,4 +1,5 @@
 import { parseDicom } from './utils/dicomParser.js';
+import { loadNpzFile } from './npzLoader.js';
 
 function bufferContainsDicom(bytes) {
   if (bytes.byteLength < 132) return false;
@@ -21,16 +22,35 @@ async function loadDicomFromFile(file) {
   return {
     file,
     buffer,
+    sourceFormat: 'dicom',
     ...parsed,
     dirty: false,
   };
 }
 
+function sortSeries(series) {
+  return series.sort((a, b) => {
+    const numA = Number(a.seriesNumber);
+    const numB = Number(b.seriesNumber);
+    if (Number.isNaN(numA) || Number.isNaN(numB)) {
+      return a.seriesDescription.localeCompare(b.seriesDescription);
+    }
+    return numA - numB;
+  });
+}
+
 async function loadDicomSeries(files) {
   const seriesMap = new Map();
+  const extraSeries = [];
 
   for (const file of files) {
     try {
+      if (file.name.toLowerCase().endsWith('.npz')) {
+        const npzSeries = await loadNpzFile(file);
+        extraSeries.push(npzSeries);
+        continue;
+      }
+
       const isDicom = await isDicomFile(file);
       if (!isDicom) continue;
       const dicom = await loadDicomFromFile(file);
@@ -42,11 +62,12 @@ async function loadDicomSeries(files) {
           seriesNumber: dicom.seriesNumber ?? '—',
           seriesDescription: dicom.seriesDescription ?? 'Unnamed Series',
           instances: [],
+          sourceFormat: 'dicom',
         });
       }
       seriesMap.get(seriesKey).instances.push(dicom);
     } catch (err) {
-      console.warn('Failed to load DICOM', file.name, err);
+      console.warn('Failed to load file', file.name, err);
     }
   }
 
@@ -54,14 +75,7 @@ async function loadDicomSeries(files) {
     series.instances.sort((a, b) => a.instanceNumber - b.instanceNumber);
   }
 
-  return Array.from(seriesMap.values()).sort((a, b) => {
-    const numA = Number(a.seriesNumber);
-    const numB = Number(b.seriesNumber);
-    if (Number.isNaN(numA) || Number.isNaN(numB)) {
-      return a.seriesDescription.localeCompare(b.seriesDescription);
-    }
-    return numA - numB;
-  });
+  return sortSeries([...seriesMap.values(), ...extraSeries]);
 }
 
 export { loadDicomSeries };
