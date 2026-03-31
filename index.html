@@ -38,9 +38,18 @@
           <button id="mergeButton" class="tool-button" title="Merge (M)">
             Merge
           </button>
-          <button data-tool="window" class="tool-button active" title="Window (W)">Window</button>
+          <div class="tool-menu">
+            <button data-tool="window" class="tool-button active" title="Window (W)">Window</button>
+            <div class="window-presets" aria-label="Window presets">
+              <button class="window-preset-btn" data-window-center="40" data-window-width="80">Brain</button>
+              <button class="window-preset-btn" data-window-center="500" data-window-width="2000">Bone</button>
+              <button class="window-preset-btn" data-window-center="40" data-window-width="400">Soft tissue</button>
+              <button class="window-preset-btn" data-window-center="-600" data-window-width="1500">Lung</button>
+            </div>
+          </div>
           <button data-tool="pan" class="tool-button" title="Pan (P)">Pan</button>
           <button data-tool="zoom" class="tool-button" title="Zoom (Z)">Zoom</button>
+          <button data-tool="stack" class="tool-button" title="Stack Scroll (R)">Stack</button>
           <button data-tool="brush" class="tool-button" title="Brush (B)">Brush</button>
           <button data-tool="select" class="tool-button" title="Select (S)">Select</button>
           <button data-tool="eyedropper" class="tool-button" title="Eyedropper (K)">
