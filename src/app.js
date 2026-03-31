@@ -22,6 +22,8 @@ const overlayCanvas = document.getElementById('overlayCanvas');
 const infoBox = document.getElementById('imageInfo');
 const saveIndicator = document.getElementById('saveIndicator');
 
+const windowPresetButtons = Array.from(document.querySelectorAll('.window-preset-btn'));
+
 const saveManager = new SaveManager();
 const viewer = new Viewer(canvas, overlayCanvas, infoBox, saveManager);
 
@@ -33,6 +35,7 @@ const toolHotkeys = {
   w: 'window',
   p: 'pan',
   z: 'zoom',
+  r: 'stack',
   b: 'brush',
   s: 'select',
   k: 'eyedropper',
@@ -162,7 +165,7 @@ inputFolder.addEventListener('change', async (event) => {
   setStatus('Loading series…');
   seriesList = await loadDicomSeries(files);
   if (!seriesList.length) {
-    setStatus('No DICOM files found');
+    setStatus('No supported DICOM or NPZ files found');
     seriesPanel.innerHTML = '';
     return;
   }
@@ -238,6 +241,21 @@ brushSizeInput.addEventListener('input', () => {
 brushIntensityInput.addEventListener('input', () => {
   viewer.setBrushSettings(Number(brushSizeInput.value), Number(brushIntensityInput.value));
   updateBrushDisplay();
+});
+
+
+windowPresetButtons.forEach((button) => {
+  button.addEventListener('click', (event) => {
+    event.preventDefault();
+    const center = Number(button.dataset.windowCenter);
+    const width = Number(button.dataset.windowWidth);
+    viewer.setWindowPreset(center, width);
+    const toolButton = toolbar.querySelector('[data-tool="window"]');
+    if (toolButton) {
+      setActiveTool(toolButton);
+    }
+    setStatus(`Applied ${button.textContent} window (C:${center}, W:${width})`);
+  });
 });
 
 window.addEventListener('keydown', async (event) => {

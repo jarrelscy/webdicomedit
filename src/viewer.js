@@ -89,6 +89,7 @@ class Viewer {
     this.selectionRect.className = 'selection-rect';
     this.selectionVisible = false;
     this.pointerTarget = null;
+    this.stackDragAccumulator = 0;
 
     this.container = canvas.parentElement;
     this.container.appendChild(this.selectionRect);
@@ -602,6 +603,14 @@ class Viewer {
     }
   }
 
+  setWindowPreset(center, width) {
+    const image = this.currentImage;
+    if (!image) return;
+    this.windowCenter = Number.isFinite(center) ? center : image.defaultWindowCenter;
+    this.windowWidth = clamp(Number.isFinite(width) ? width : image.defaultWindowWidth, 1, 5000);
+    this.render();
+  }
+
   adjustWindow(deltaX, deltaY) {
     const image = this.currentImage;
     if (!image) return;
@@ -733,6 +742,9 @@ class Viewer {
         }
       }
       this.lastPointer = { x: event.clientX, y: event.clientY };
+      if (this.activeTool === 'stack') {
+        this.stackDragAccumulator = 0;
+      }
       if (this.activeTool === 'brush') {
         this.applyBrush(this.currentImage, coords);
         this.render();
@@ -780,6 +792,16 @@ class Viewer {
         const dy = event.clientY - this.lastPointer.y;
         this.adjustPan(dx, dy);
         this.lastPointer = { x: event.clientX, y: event.clientY };
+      } else if (this.activeTool === 'stack' && this.isDragging) {
+        const dy = event.clientY - this.lastPointer.y;
+        this.stackDragAccumulator += dy;
+        const pixelsPerSlice = 12;
+        while (Math.abs(this.stackDragAccumulator) >= pixelsPerSlice) {
+          const direction = this.stackDragAccumulator > 0 ? 1 : -1;
+          this.nextImage(direction);
+          this.stackDragAccumulator -= direction * pixelsPerSlice;
+        }
+        this.lastPointer = { x: event.clientX, y: event.clientY };
       } else if (this.activeTool === 'zoom' && this.isDragging) {
         const dy = event.clientY - this.lastPointer.y;
         this.adjustZoom(dy, coords);
@@ -802,6 +824,7 @@ class Viewer {
         this.finishSelection();
       }
       this.isDragging = false;
+      this.stackDragAccumulator = 0;
       if (this.pointerTarget && this.pointerTarget.releasePointerCapture) {
         try {
           if (event && typeof event.pointerId === 'number') {

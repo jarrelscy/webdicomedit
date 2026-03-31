@@ -42,6 +42,12 @@ class SaveManager {
     if (!this.outputDirectory) {
       throw new Error('Output folder not selected');
     }
+
+    const unsupported = Array.from(this.dirtyImages).filter((image) => image.sourceFormat !== 'dicom');
+    if (unsupported.length) {
+      throw new Error('Saving NPZ-derived slices is not supported yet');
+    }
+
     const results = [];
     for (const image of Array.from(this.dirtyImages)) {
       const fileHandle = await this.outputDirectory.getFileHandle(image.file.name, {
