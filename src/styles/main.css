@@ -137,6 +137,8 @@ body {
   gap: 0.5rem;
   padding: 1rem;
   overflow-y: auto;
+  position: relative;
+  z-index: 6;
 }
 
 .tool-button {
@@ -166,8 +168,8 @@ body {
 
 .window-presets {
   position: absolute;
-  left: calc(100% + 8px);
-  top: 0;
+  left: 0;
+  top: calc(100% + 6px);
   display: none;
   flex-direction: column;
   gap: 0.35rem;
