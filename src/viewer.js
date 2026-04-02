@@ -45,6 +45,207 @@ function computeStats(image) {
   return { min, max, mean };
 }
 
+function getPixelValueRange(image) {
+  if (image.minStoredValue != null && image.maxStoredValue != null) {
+    return { min: image.minStoredValue, max: image.maxStoredValue };
+  }
+  const array = image.pixelArray;
+  if (array instanceof Int16Array) {
+    return { min: -32768, max: 32767 };
+  }
+  if (array instanceof Uint16Array) {
+    return { min: 0, max: 65535 };
+  }
+  if (array instanceof Int8Array) {
+    return { min: -128, max: 127 };
+  }
+  return { min: 0, max: 255 };
+}
+
+function poissonBlendIntoImage(sourcePatch, width, height, startX, startY, image) {
+  const { columns, rows, pixelArray } = image;
+  const total = width * height;
+  if (total === 0) {
+    return false;
+  }
+  const valid = new Uint8Array(total);
+  const boundary = new Uint8Array(total);
+  const targetPatch = new Float32Array(total);
+
+  let validCount = 0;
+  for (let y = 0; y < height; y++) {
+    const globalY = startY + y;
+    if (globalY < 0 || globalY >= rows) {
+      continue;
+    }
+    for (let x = 0; x < width; x++) {
+      const globalX = startX + x;
+      if (globalX < 0 || globalX >= columns) {
+        continue;
+      }
+      const idx = y * width + x;
+      const globalIndex = globalY * columns + globalX;
+      valid[idx] = 1;
+      targetPatch[idx] = pixelArray[globalIndex];
+      validCount++;
+    }
+  }
+
+  if (validCount === 0) {
+    return false;
+  }
+
+  let interiorCount = 0;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = y * width + x;
+      if (!valid[idx]) {
+        continue;
+      }
+      let isBoundary = x === 0 || y === 0 || x === width - 1 || y === height - 1;
+      if (!isBoundary) {
+        const leftValid = valid[idx - 1];
+        const rightValid = valid[idx + 1];
+        const upValid = valid[idx - width];
+        const downValid = valid[idx + width];
+        if (!leftValid || !rightValid || !upValid || !downValid) {
+          isBoundary = true;
+        }
+      }
+      if (isBoundary) {
+        boundary[idx] = 1;
+      } else {
+        interiorCount++;
+      }
+    }
+  }
+
+  const { min: minValue, max: maxValue } = getPixelValueRange(image);
+
+  const applyDirectCopy = () => {
+    let changed = false;
+    for (let y = 0; y < height; y++) {
+      const globalY = startY + y;
+      if (globalY < 0 || globalY >= rows) {
+        continue;
+      }
+      for (let x = 0; x < width; x++) {
+        const idx = y * width + x;
+        if (!valid[idx]) {
+          continue;
+        }
+        const globalX = startX + x;
+        const globalIndex = globalY * columns + globalX;
+        const newValue = clamp(Math.round(sourcePatch[idx]), minValue, maxValue);
+        if (pixelArray[globalIndex] !== newValue) {
+          pixelArray[globalIndex] = newValue;
+          changed = true;
+        }
+      }
+    }
+    return changed;
+  };
+
+  if (interiorCount === 0) {
+    return applyDirectCopy();
+  }
+
+  const source = new Float32Array(sourcePatch);
+  let prev = new Float32Array(targetPatch);
+  let curr = new Float32Array(total);
+  const maxIterations = 500;
+  const tolerance = 0.1;
+
+  const interiorMask = new Uint8Array(total);
+  for (let i = 0; i < total; i++) {
+    interiorMask[i] = valid[i] && !boundary[i] ? 1 : 0;
+  }
+
+  for (let iteration = 0; iteration < maxIterations; iteration++) {
+    let maxDiff = 0;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = y * width + x;
+        if (!valid[idx]) {
+          continue;
+        }
+        if (boundary[idx]) {
+          curr[idx] = prev[idx];
+          continue;
+        }
+        const left = prev[idx - 1];
+        const right = prev[idx + 1];
+        const up = prev[idx - width];
+        const down = prev[idx + width];
+        const divergence =
+          4 * source[idx] - (source[idx - 1] + source[idx + 1] + source[idx - width] + source[idx + width]);
+        const newValue = (left + right + up + down + divergence) / 4;
+        curr[idx] = newValue;
+        const diff = Math.abs(newValue - prev[idx]);
+        if (diff > maxDiff) {
+          maxDiff = diff;
+        }
+      }
+    }
+    if (maxDiff < tolerance) {
+      prev = curr;
+      break;
+    }
+    const temp = prev;
+    prev = curr;
+    curr = temp;
+  }
+
+  const solution = prev;
+  if (interiorCount > 0) {
+    let interiorSourceSum = 0;
+    let interiorSolutionSum = 0;
+    for (let i = 0; i < total; i++) {
+      if (!interiorMask[i]) {
+        continue;
+      }
+      interiorSourceSum += source[i];
+      interiorSolutionSum += solution[i];
+    }
+    const interiorMean = interiorSolutionSum / interiorCount;
+    const sourceMean = interiorSourceSum / interiorCount;
+    const offset = sourceMean - interiorMean;
+    if (Number.isFinite(offset) && Math.abs(offset) > 0.001) {
+      for (let i = 0; i < total; i++) {
+        if (interiorMask[i]) {
+          solution[i] += offset;
+        }
+      }
+    }
+  }
+  let changed = false;
+  for (let y = 0; y < height; y++) {
+    const globalY = startY + y;
+    if (globalY < 0 || globalY >= rows) {
+      continue;
+    }
+    for (let x = 0; x < width; x++) {
+      const idx = y * width + x;
+      if (!valid[idx]) {
+        continue;
+      }
+      const globalX = startX + x;
+      const globalIndex = globalY * columns + globalX;
+      const newValue = clamp(Math.round(solution[idx]), minValue, maxValue);
+      if (pixelArray[globalIndex] !== newValue) {
+        pixelArray[globalIndex] = newValue;
+        changed = true;
+      }
+    }
+  }
+
+  if (!changed) {
+    return false;
+  }
+
+  return true;
+}
+
 function ensureImageDefaults(image) {
   if (image.stats) {
     return;
@@ -379,37 +580,28 @@ class Viewer {
     const { position, region, width, height, depth, zBase } = this.activePaste;
     const startX = Math.floor(position.x);
     const startY = Math.floor(position.y);
+    let appliedAny = false;
     for (let z = 0; z < depth; z++) {
       const sliceIndex = zBase + z;
       if (sliceIndex < 0 || sliceIndex >= this.currentSeries.instances.length) {
         continue;
       }
       const targetImage = this.currentSeries.instances[sliceIndex];
-      const { columns, rows, pixelArray } = targetImage;
-      for (let y = 0; y < height; y++) {
-        const yy = startY + y;
-        if (yy < 0 || yy >= rows) {
-          continue;
-        }
-        for (let x = 0; x < width; x++) {
-          const xx = startX + x;
-          if (xx < 0 || xx >= columns) {
-            continue;
-          }
-          const destIndex = yy * columns + xx;
-          const srcIndex = z * width * height + y * width + x;
-          pixelArray[destIndex] = region[srcIndex];
-        }
+      const sliceOffset = z * width * height;
+      const sliceRegion = region.subarray(sliceOffset, sliceOffset + width * height);
+      const changed = poissonBlendIntoImage(sliceRegion, width, height, startX, startY, targetImage);
+      if (changed) {
+        targetImage.dirty = true;
+        this.saveManager.markDirty(targetImage);
+        appliedAny = true;
+        console.log('[Viewer] poisson blend applied to slice', {
+          sliceIndex,
+          startX,
+          startY,
+          width,
+          height,
+        });
       }
-      targetImage.dirty = true;
-      this.saveManager.markDirty(targetImage);
-      console.log('[Viewer] paste applied to slice', {
-        sliceIndex,
-        startX,
-        startY,
-        width,
-        height,
-      });
     }
     console.log('[Viewer] paste committed', {
       position: { startX, startY },
@@ -423,7 +615,7 @@ class Viewer {
     this.pasteRect.style.display = 'none';
     this.render();
     this.updateOverlayPointerEvents();
-    return true;
+    return appliedAny;
   }
 
   copySelection() {
@@ -459,6 +651,9 @@ class Viewer {
       }
     }
     this.clipboard = { region, width, height, depth, zMin, zMax };
+    if (this.selection) {
+      this.selection.captureZ = false;
+    }
     console.log('[Viewer] selection copied', { width, height, depth, zMin, zMax });
     this.hideSelection();
     return true;
@@ -646,6 +841,17 @@ class Viewer {
     if (!this.selection) {
       this.selectionRect.style.display = 'none';
       console.log('[Viewer] selection rect hidden');
+      return;
+    }
+    const currentSlice = this.currentImageIndex;
+    const { zMin = currentSlice, zMax = currentSlice } = this.selection;
+    if (currentSlice < zMin || currentSlice > zMax) {
+      this.selectionRect.style.display = 'none';
+      console.log('[Viewer] selection rect hidden - out of plane', {
+        currentSlice,
+        zMin,
+        zMax,
+      });
       return;
     }
     const { start, end } = this.selection;
